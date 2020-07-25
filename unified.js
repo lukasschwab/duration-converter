@@ -2,7 +2,7 @@
  * INPUT-TO-DATE UTILS.
  */
 
-import { moment } from "./moment.min.js"
+import * as moment from "./moment.min.js"
 
 // NOTE: warning visibility is controlled from the selected parser.
 const warning = document.getElementById('warning');
