@@ -2,16 +2,14 @@
  * INPUT-TO-DATE UTILS.
  */
 
-import * as moment from "./moment.min.js"
-
 // NOTE: warning visibility is controlled from the selected parser.
 const warning = document.getElementById('warning');
 
-const msParser = (ms) => moment.duration(ms, "milliseconds")
+const msParser = (ms) => moment.duration(ms, "milliseconds");
 
-const sParser = (s) => moment.duration(s, "seconds")
+const sParser = (s) => moment.duration(s, "seconds");
 
-const isoParser = (iso) => moment.duration(iso)
+const isoParser = (iso) => moment.duration(iso);
 
 var error;
 
@@ -31,16 +29,34 @@ const showErrorIfInvalid = (duration) => {
  * DATE-TO-OUTPUT UTILS.
  */
 
-const toDefaultOutput = (d) => toString(d.asMilliseconds());
+const toHumanizedOutput = (d) => {
+  // Override default humanization for small durations.
+  const secs = d.asSeconds();
+  if (secs < 1) {
+    return `${d.asMilliseconds()} milliseconds`;
+  } else if (secs < 2) {
+    return "a second";
+  }
+  return d.humanize()
+}
 
-const toSecondsOutput = (d) => toString(d.asSeconds());
+const toMillisecondsOutput = (d) => d.asMilliseconds();
+
+const toSecondsOutput = (d) => d.asSeconds();
 
 const toISOOutput = (d) => d.toISOString();
 
+const toBeforeOutput = (d) => moment().subtract(d);
+
+const toFromOutput = (d) => moment().add(d);
+
 const outputsAndGenerators = new Map([
-  [document.getElementById('default-output'), toDefaultOutput],
+  [document.getElementById('humanized-output'), toHumanizedOutput],
+  [document.getElementById('milliseconds-output'), toMillisecondsOutput],
   [document.getElementById('seconds-output'), toSecondsOutput],
   [document.getElementById('iso-output'), toISOOutput],
+  [document.getElementById('before-output'), toBeforeOutput],
+  [document.getElementById('from-output'), toFromOutput],
 ]);
 
 /**
@@ -54,21 +70,11 @@ const setOutputs = () => {
   const duration = inputParser(input.value);
   const invalid = showErrorIfInvalid(duration);
   outputsAndGenerators.forEach((generator, output) => {
-    output.innerHTML = invalid ? "Invalid Duration" : generator(date);
+    output.innerHTML = invalid ? "Invalid Duration" : generator(duration);
   });
 }
 
 input.addEventListener('input', setOutputs);
-
-const reset = () => {
-  input.value = msToValidInput(0);
-  setOutputs();
-}
-
-// Clicking the reset link sets to the input to the current timestamp.
-Array.from(document.getElementsByClassName("reset-to-now")).forEach(
-  link => link.addEventListener("click", reset)
-);
 
 /**
  * SWITCHING UI.
@@ -90,12 +96,16 @@ var inputParser;
 // (Date) => String | Number
 var msToValidInput;
 
+const getCurrentMs = () => inputParser
+  ? inputParser(input.value).asMilliseconds()
+  : 0;
+
 function switchToMs() {
   dropdown.innerText = "Milliseconds";
-  input.type = "number";
-  inputParser = msParser;
-  // Needs to be a number rather than a string.
   msToValidInput = (ms) => ms;
+  input.value = msToValidInput(getCurrentMs());
+  inputParser = msParser;
+  input.type = "number";
   switchToMsLink.classList.add("active");
   switchToISOLink.classList.remove("active");
   switchToSLink.classList.remove("active");
@@ -104,31 +114,30 @@ function switchToMs() {
 
 switchToMsLink.addEventListener('click', () => {
   switchToMs();
-  reset();
 });
 
 function switchToS() {
-  dropdown.innerText = "Milliseconds";
-  input.type = "number";
-  inputParser = msParser;
-  // Needs to be a number rather than a string.
+  dropdown.innerText = "Seconds";
   msToValidInput = (ms) => ms / 1000;
-  switchToMsLink.classList.add("active");
+  input.value = msToValidInput(getCurrentMs());
+  inputParser = sParser;
+  input.type = "number";
+  switchToSLink.classList.add("active");
+  switchToMsLink.classList.remove("active");
   switchToISOLink.classList.remove("active");
-  switchToSLink.classList.remove("active");
   error = sError;
 }
 
 switchToSLink.addEventListener('click', () => {
   switchToS();
-  reset();
 });
 
 function switchToISO() {
   dropdown.innerText = "ISO 8601";
-  input.type = "text"
-  inputParser = isoParser;
   msToValidInput = (ms) => msParser(ms).toISOString();
+  input.type = "text";
+  input.value = msToValidInput(getCurrentMs());
+  inputParser = isoParser;
   switchToISOLink.classList.add("active");
   switchToMsLink.classList.remove("active");
   switchToSLink.classList.remove("active");
@@ -137,32 +146,26 @@ function switchToISO() {
 
 switchToISOLink.addEventListener('click', () => {
   switchToISO();
-  reset();
 });
 
 /**
  * INITIALIZATION
  */
 
-// If redirected from search.html, start with the searched timestamp rather than
-// the current timestamp.
+// If there's a query string, start with that duration.
 const queried = decodeURIComponent(window.location.search.substring(1));
 if (queried && queried.length > 0) {
   console.log("Initializing with query value", queried)
-  if (queried.match(/^\d+$/g)) {
-    console.log("Switching on query to Unix");
-    switchToUnix();
-  } else if (!isNaN((new Date(queried)).getTime())) {
+  if (isNaN(queried)) {
     console.log("Switching on query to ISO");
     switchToISO();
   } else {
-    console.log("Defaulting on query to Mongo");
-    switchToMongo();
-  }
+    switchToMs();
+  };
   input.value = queried;
   setOutputs();
 } else {
-  // Without a query, default to Unix.
+  // Without a query, default to milliseconds.
   switchToMs();
-  reset();
+  setOutputs();
 }
