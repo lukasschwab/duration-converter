@@ -47,8 +47,10 @@ const toSecondsOutput = (d) => d.asSeconds();
 const toISOOutput = (d) => d.toISOString();
 
 const toBeforeOutput = (d) => moment().subtract(d);
+const toBeforeOutputSecondary = (d) => moment().subtract(d).toISOString()
 
 const toFromOutput = (d) => moment().add(d);
+const toFromOutputSecondary = (d) => moment().add(d).toISOString();
 
 const outputsAndGenerators = new Map([
   [document.getElementById('humanized-output'), toHumanizedOutput],
@@ -56,7 +58,9 @@ const outputsAndGenerators = new Map([
   [document.getElementById('seconds-output'), toSecondsOutput],
   [document.getElementById('iso-output'), toISOOutput],
   [document.getElementById('before-output'), toBeforeOutput],
+  [document.getElementById('before-output-secondary'), toBeforeOutputSecondary],
   [document.getElementById('from-output'), toFromOutput],
+  [document.getElementById('from-output-secondary'), toFromOutputSecondary],
 ]);
 
 /**
