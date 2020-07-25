@@ -1,0 +1,19 @@
+#main {
+  margin-top: 30vh;
+}
+
+.quiet {
+  color: #95a5a6;
+}
+
+.list-group-item-label {
+  margin-right: 20px;
+  margin-bottom: 0;
+  /* Unselectable */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
